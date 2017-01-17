@@ -1,16 +1,6 @@
-import java.awt.event.ActionListener;
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.Callable;
-
-import javax.swing.JDialog;
-import javax.swing.JOptionPane;
-
 import javafx.application.Application;
-import javafx.event.ActionEvent;
-import javafx.event.EventHandler;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.ChoiceBox;
@@ -32,6 +22,8 @@ public class Main extends Application{
 		HBox sqlBox;
 		HBox testBox;
 		HBox dataBox;
+		
+		HBox lineBox1,lineBox2,headerBox;
 		
 		Button btnMain;
 		Button btnBin;
@@ -61,6 +53,12 @@ public class Main extends Application{
 		ArrayList<String> dataList;
 		ArrayList<String> testList;
 		
+		// for custom
+		int seq;
+		ArrayList<ChoiceBox<String>> rowCBoxList;
+		ArrayList<TextField> rowPathList;
+		ArrayList<HBox> rowBoxList;
+		ArrayList<ArrayList<String>> rowPathContentList;
 	public static void main(String[] args) {
 		launch(args);
 	}
@@ -90,7 +88,6 @@ public class Main extends Application{
 		testBox = new HBox();
 		dataBox = new HBox();
 		
-
 		//loadBats();
 		//loadDatas();
 		//loadSqls();
@@ -106,11 +103,15 @@ public class Main extends Application{
 		// ============== bin ==============
 		btnBin = new Button("bin");
 		btnBin.setOnAction(event -> openFF(txtMain.getText() + "\\" + btnBin.getText()));
+		btnBin.setMinWidth(40);
 		
 		txtBinSearch = new TextField();		
 		txtBinSearch.setPromptText("Search .bat file");
+		txtBinSearch.setPrefWidth(250);
+		
 		cboxBat = new ChoiceBox<String>();
 		cboxBat.setOnAction(e-> enableButtonsByInput("bat"));
+		cboxBat.setMaxWidth(100);
 		loadBats();
 		txtBinSearch.setOnAction(e-> searchRefreshChoiceBox("bat",txtBinSearch.getText(), batList, cboxBat));
 		
@@ -147,25 +148,167 @@ public class Main extends Application{
 		txtTestSearch.setPromptText("Search test file/folder");
 		txtTestSearch.setOnAction(e -> searchRefreshChoiceBox("test",txtTestSearch.getText(), testList, cboxTest));
 		loadTests();
-		testBox.getChildren().addAll(btnTest,txtTestSearch,cboxTest);	
-		// --------------------------------------------------
-
 		
+		testBox.getChildren().addAll(btnTest,txtTestSearch,cboxTest);	
 		
 		
 		mainBox.getChildren().addAll(btnMain, txtMain);
-		bigBox.getChildren().addAll(mainBox, binBox, dataBox,sqlBox,testBox);
-				
+		
+		// -------Custom-------------------------------------------
+		seq = 0;
+		rowPathList = new ArrayList<TextField>();
+		rowPathContentList = new ArrayList<ArrayList<String>>();
+		rowCBoxList = new ArrayList<ChoiceBox<String>>();
+		rowBoxList = new ArrayList<HBox>();
+		
+		lineBox1 = new HBox();		
+		Label hl = new Label("-----------------------------------------Custom--------------------------------------------");
+		lineBox1.getChildren().add(hl);
+
+		lineBox2 = new HBox();		
+		Button btnAdd = new Button(">>>>>>> Click to add a row <<<<<<<");
+		btnAdd.setPrefWidth(640);
+		btnAdd.setTextFill(Color.RED);
+		btnAdd.setOnAction(e-> addRow());
+		lineBox2.getChildren().add(btnAdd);
+		// header
+
+		headerBox = new HBox();
+		Label hTitle = new Label("Title");
+		Label hPath = new Label("Path");
+		Label hFilter = new Label("Filter");
+		Label hContent = new Label("Content");
+		Label hOperation = new Label("Operation");
+
+		hTitle.setPrefWidth(200);
+		hTitle.setTextFill(Color.BLUE);
+		hPath.setMinWidth(170);
+		hPath.setTextFill(Color.BLUE);
+		hFilter.setPrefWidth(150);
+		hFilter.setTextFill(Color.BLUE);
+		hContent.setPrefWidth(100);
+		hContent.setTextFill(Color.BLUE);
+		//hOperation.setTextFill(Color.BLUE);
+		headerBox.getChildren().addAll(hTitle,hPath,hFilter,hContent);
+		
+
+		// -------Custom end-------------------------------------------
+		bigBox.getChildren().addAll(mainBox, binBox, dataBox,sqlBox,testBox,lineBox1,lineBox2,headerBox);
+		System.out.println("here");
 		
 		Scene scene = new Scene(bigBox, 640, 480);
 		primaryStage.setScene(scene);
 		primaryStage.show();
 		
+		addRow();
 	}
 
 	
 	// ++++++++++++++++++++++++++ Utility +++++++++++++++++++++++++++++++
+	// Custom >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+	private void addRow(){
+		
+		System.out.println("Add a row");
+		
+		//1 t  just a title
+		TextField rowLabel = new TextField();		
+		rowLabel.setMaxWidth(50);
+		rowLabel.setPromptText("--title--");
+		rowLabel.setId(""+seq);
+		//2 p
+		TextField rowPath = new TextField();
+		rowPath.setPromptText("--Path--");		
+		rowPath.setPrefWidth(290);
+		rowPath.setId(""+seq);
+		rowPath.setOnAction(e->rowPathGetContent( rowPath.getId(), rowPath.getText() ));
+		
+		//3 f
+		TextField rowFilter = new TextField();
+		rowFilter.setPromptText("--Filter--");
+		rowFilter.setId(""+seq);
+		rowFilter.setPrefWidth(110);
+		rowFilter.setOnAction(e->rowFilterFilterContent( rowFilter.getId(), rowFilter.getText() ));
+		
+		//4 c
+		ChoiceBox<String> rowContent = new ChoiceBox<String>();
+		rowContent.setPrefWidth(150);
+		rowContent.setId(""+seq);
+		//5 o
+		Button rowOpen = new Button(">>");
+		rowOpen.setId("" + seq);
+		rowOpen.setOnAction(e -> rowOpen(rowOpen.getId()));
+		
+		
+		HBox rowBox = new HBox();
+		rowBox.setId(""+seq);
+		
+		rowBox.getChildren().addAll(rowLabel,rowPath,rowFilter,rowContent,rowOpen);
+		bigBox.getChildren().add(rowBox);
+		seq++;
+		
+		rowPathList.add(rowPath);
+		rowCBoxList.add(rowContent);
+		rowBoxList.add(rowBox);
+		rowPathContentList.add(new ArrayList<String>());
+		System.out.println("size="+rowPathContentList);
+	}
+	
+	
+	
+	
+	// Custom end <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+	
+	private void rowPathGetContent(String id, String path){
+		System.out.println("rowPathGetContent id="+id + ","+ path);
+		
+		if(path.isEmpty()){ return; }	
+		
+		int pathType = checkFF(path);
+		switch(pathType){
+			case 1: // path=file, only "open" can edit it
+				rowCBoxList.get(Integer.parseInt(id)).getItems().clear();
+				break;
+			case 2: // path=folder
+				ArrayList<String> content = findFiles(path,0);
+				rowPathContentList.get(Integer.parseInt(id)).clear();
+				rowCBoxList.get(Integer.parseInt(id)).getItems().clear(); 
+				if(content.size() > 0 ){ 				 
+					rowCBoxList.get(Integer.parseInt(id)).getItems().addAll(content);
+					rowPathContentList.get(Integer.parseInt(id)).addAll(content);
+					System.out.println("rowPathContentList size again="+rowPathContentList.get(Integer.parseInt(id)).size());
+				}
+				break;
+			default:
+				break;
+				
+		}
+	}
+	private void rowFilterFilterContent(String id, String filter){
+		System.out.println("rowFilterFilterContent id="+id + "," + filter);
+		
+		//bats_temp.clear();
+		ArrayList<String> temp = new ArrayList<String>();
+		for(int i=0; i<rowPathContentList.get(Integer.parseInt(id)).size(); i++){
+			if(rowPathContentList.get(Integer.parseInt(id)).get(i).contains(filter)){		
+				temp.add(rowPathContentList.get(Integer.parseInt(id)).get(i));
+			}
+		}
+		rowCBoxList.get(Integer.parseInt(id)).getItems().clear();
+		fillChoiceBox(temp,rowCBoxList.get(Integer.parseInt(id)));
+		rowCBoxList.get(Integer.parseInt(id)).getSelectionModel().select(0);
+	}
+	private void rowOpen(String id){
+		System.out.println("rowOpen id="+id);
+		String path = rowPathList.get(Integer.parseInt(id)).getText();
+		String name = rowCBoxList.get(Integer.parseInt(id)).getSelectionModel().getSelectedItem();
+		String fp = path+"\\"+name;
+		openFF(fp);
+	}
 
+	
+	
+	
+	
 	private void enableButtonsByInput(String target){
 		switch(target){
 			case "bat":
@@ -239,6 +382,7 @@ public class Main extends Application{
 		testList = findFiles(txtMain.getText() + "\\" + "test",0);
 		fillChoiceBox(testList,cboxTest);
 	}
+	/**open folder, or open file in notepad++*/
 	public void openFF(String path){		
 		try{
 			int type = checkFF(path);
@@ -320,6 +464,7 @@ public class Main extends Application{
 
 	/**Return ArrayList<String> of files/folders, type: 1 for file only, 2 for folder only, others for all*/
 	public ArrayList<String> findFiles(String path, int type){
+		if(path == null || path.length() <=0 || path.isEmpty()){ return null; }		
 		File folder = new File(path);
 		File[] listOfFiles = folder.listFiles();
 		ArrayList<String> result = new ArrayList<String>();
